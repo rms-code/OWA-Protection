@@ -1,0 +1,28 @@
+<Extension w3c>
+    Module xm_csv
+    Fields $date, $time, $s-ip, $cs-method, $cs-uri-stem, $cs-uri-query, $s-port, $cs-username, $c-ip, $csUser-Agent, $cs-referrer, $sc-status, $sc-substatus, $sc-win32-status, $time-taken
+    FieldTypes string, string, string, string, string, string, integer, string, string, string, string, integer, integer, integer, integer
+    Delimiter ' '
+</Extension>
+
+<Input IIS_IN>
+    Module    im_file
+    File    "C:\\inetpub\\logs\\LogFiles\\W3SVC1\\u_ex*"
+    SavePos  TRUE
+
+    Exec        if $raw_event =~ /^#/ drop();                \
+                else                                             \
+                {                                                \
+                    w3c->parse_csv();                            \
+                    $EventTime = parsedate($date + " " + $time); \
+                    $EventTime = strftime($EventTime, "%Y-%m-%dT%H:%M:%SZ"); \
+		}
+   Exec		if $raw_event =~ /(addsomeip'syouwanttodrop\d*)/ drop();
+</Input>
+
+<Output IIS_Outfile>
+    Module	om_file
+    Exec	$raw_event = to_json();
+    Exec	if $raw_event =~ /(addsomeip'syouwanttodrop\d*)/ drop();
+    File	"owaiis.json"
+</Output>
